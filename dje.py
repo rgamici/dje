@@ -53,15 +53,18 @@ def nova_busca(url,dtfim):
     return(len(res))
 
 if __name__ == "__main__":
-    logfile = '/home/renato/git/dje/dje.log'
+    path = '/home/renato/git/dje/' # compatibilidade cron
+    logfile = path + 'dje.log'
     log = open(logfile,'a')
     log.write(logtime()+' - Programa iniciado.\n')
+    subprocess.run(path + 'notify.sh "Programa Iniciado"', shell = True)
     [url,dtfim] = busca_inicial() # inicializa
     while dtfim == hoje():
         log.write(logtime()+' - Data não virou ainda. Nova busca em 5 minutos\n')
         time.sleep(300)
         [url,dtfim] = busca_inicial()
     log.write(logtime()+' - Data virou.\n')
+    subprocess.run(path + 'notify.sh "Data Virou"', shell = True)
     res = nova_busca(url,dtfim)
     while res == 0:
         if time.strftime("%H") == '21': # data virou
@@ -77,8 +80,8 @@ if __name__ == "__main__":
         log.write(logtime()+' - Resultado disponível.\n')
         log.write('#####################################\n')
         log.close()
-        subprocess.run("/home/renato/git/dje/notify.sh", shell = True)
-        #subprocess.run("notify-send 'DJE' 'Dje disponível' -i starred", shell = True)
+        subprocess.run(path + 'notify.sh "DJE disponível"', shell = True)
+        #subprocess.run("DISPLAY=:0 notify-send 'DJE' 'Dje disponível' -i starred", shell = True)
     else:
         log.write(logtime()+' - ERRO - Tempo limite atingido.\n')
         log.write('#####################################\n')
