@@ -54,38 +54,44 @@ def nova_busca(url,dtfim):
 
 if __name__ == "__main__":
     path = '/home/renato/git/dje/' # compatibilidade cron
-    logfile = path + 'dje.log'
-    log = open(logfile,'a')
-    log.write(logtime()+' - Programa iniciado.\n')
-    subprocess.run(path + 'notify.sh "Programa Iniciado"', shell = True)
+    #logfile = path + 'dje.log' # log via bash output (>> logfile)
+    #log = open(logfile,'a')
+    #log.write(logtime()+' - Programa iniciado.\n')
+    print(logtime()+' - Programa iniciado.')
+    subprocess.run(path + 'notify.sh "'+logtime()+'\nPrograma Iniciado" ', shell = True)
     [url,dtfim] = busca_inicial() # inicializa
     while dtfim == hoje():
-        log.write(logtime()+' - Data não virou ainda. Nova busca em 5 minutos\n')
+        #log.write(logtime()+' - Data não virou ainda. Nova busca em 5 minutos\n')
+        print(logtime()+' - Data não virou ainda. Nova busca em 5 minutos')
         time.sleep(300)
         [url,dtfim] = busca_inicial()
-    log.write(logtime()+' - Data virou.\n')
-    subprocess.run(path + 'notify.sh "Data Virou"', shell = True)
+    #log.write(logtime()+' - Data virou.\n')
+    print(logtime()+' - Data virou.')
+    subprocess.run(path + 'notify.sh "'+logtime()+'\nData Virou"', shell = True)
     res = nova_busca(url,dtfim)
     while res == 0:
-        if time.strftime("%H") == '21': # data virou
-            pausa = 60
-        else:  # apos 22:00
-            pausa = 30
-        log.write(logtime()+' - Resultado indisponível, nova busca em '+pausa+' segundos.\n')
+        #if time.strftime("%H") == '21': # data virou
+        #    pausa = 60
+        #else:  # apos 22:00
+        #    pausa = 30
+        pausa = 60
+        #log.write(logtime()+' - Resultado indisponível, nova busca em '+pausa+' segundos.\n')
+        print(logtime()+' - Resultado indisponível, nova busca em '+str(pausa)+' segundos.')
         time.sleep(pausa)
-        res = novabusca(url,dtfim)
-        if time.strftime("%H") == 00:
+        res = nova_busca(url,dtfim)
+        if time.strftime("%H") == '02':
             res = -1
     if res == 1:
-        log.write(logtime()+' - Resultado disponível.\n')
-        log.write('#####################################\n')
-        log.close()
-        subprocess.run(path + 'notify.sh "DJE disponível"', shell = True)
-        #subprocess.run("DISPLAY=:0 notify-send 'DJE' 'Dje disponível' -i starred", shell = True)
+        #log.write(logtime()+' - Resultado disponível.\n')
+        #log.write('#####################################\n')
+        #log.close()
+        print(logtime()+' - Resultado disponível.\n#####################################')
+        subprocess.run(path + 'notify.sh "'+logtime()+'\nDJE disponível"', shell = True)
     else:
-        log.write(logtime()+' - ERRO - Tempo limite atingido.\n')
-        log.write('#####################################\n')
-        log.close()
+        #log.write(logtime()+' - ERRO - Tempo limite atingido.\n')
+        #log.write('#####################################\n')
+        #log.close()
+        print(logtime()+' - ERRO - Tempo limite atingido.\n#####################################')
 
 
     
