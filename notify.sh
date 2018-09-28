@@ -3,4 +3,5 @@
 eval "export $(egrep -z DBUS_SESSION_BUS_ADDRESS /proc/$(pgrep -u $LOGNAME openbox)/environ)";
 
 #Code:
-DISPLAY=:0 notify-send 'DJE' "${1}" -i starred
+DISPLAY=:0 notify-send 'DJE' "${1}" -i starred -t 0
+
