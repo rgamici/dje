@@ -14,7 +14,11 @@ def logtime():
 
 def busca_inicial():
     url = 'http://dje.tjsp.jus.br/cdje/consultaAvancada.do'
-    page = urllib.request.urlopen(url)
+    try:
+        page = urllib.request.urlopen(url)
+    except:
+        print(logtime()+' - Erro ao carregar página')
+        return([url,hoje()])  # vai forçar nova busca
     soup = BeautifulSoup(page, 'html.parser')
 
     # separa secao busca avançada
@@ -36,12 +40,15 @@ def nova_busca(url,dtfim):
               'dadosConsulta.dtInicio' : dtfim,
               'dadosConsulta.cdCaderno' : '10', # Administrativo apenas
               'dadosConsulta.pesquisaLivre' : '201*' }
-
-    data = urllib.parse.urlencode(values)
-    data = data.encode('utf-8') # data should be bytes
-    req = urllib.request.Request(url, data)
-
-    the_page = urllib.request.urlopen(req).read()
+    try:
+        data = urllib.parse.urlencode(values)
+        data = data.encode('utf-8') # data should be bytes
+        req = urllib.request.Request(url, data)
+        the_page = urllib.request.urlopen(req).read()
+    except:
+        print(logtime()+' - Erro ao carregar página')
+        return(0) # vai forçar nova busca
+    
     soup = BeautifulSoup(the_page, 'html.parser')
 
      # separa secao busca avançada
