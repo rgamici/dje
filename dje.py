@@ -6,6 +6,10 @@ import subprocess, time, sys, re, platform
 import urllib.request
 import urllib.parse
 from bs4 import BeautifulSoup
+try:
+    from PyQt5.QtWidgets import *
+except ImportError:
+    from PyQt4.QtGui import *
 
 def hoje():
     return(time.strftime("%d/%m/%Y"))
@@ -65,13 +69,20 @@ def notifica(path,msg):
     if platform.system() == 'Linux':
         subprocess.run(path + 'notify.sh "'+logtime()+'\n'+msg+'" ', shell = True)
     elif platform.system() == 'Windows':
-        subprocess.run('msg * '+msg, shell=True)        
+        #subprocess.run('msg * '+msg, shell=True)
+        pop = QMessageBox()
+        pop.setIcon(QMessageBox.Information)
+        pop.setText(msg)
+        pop.setWindowTitle("DJE")
+        pop.exec_()
+
 
 if __name__ == "__main__":
     if platform.system() == 'Linux':
         path = re.search('((?:.*?/)+).*\.py',sys.argv[0]).group(1) # guarda o caminho para rodar o script de notificação por causa do cron
     else:
         path = ''
+        app = QApplication([]) # Notificações windows
     print(logtime()+' - Programa iniciado.')
     notifica(path,'Programa Iniciado')
     [url,dtfim] = busca_inicial() # inicializa
