@@ -61,6 +61,7 @@ def nova_busca(url,dtfim):
 
 if __name__ == "__main__":
     path = '/home/renato/git/dje/' # compatibilidade cron
+    ### cron: 00 21 * * 1-5 /home/renato/git/dje/dje.py >> /home/renato/git/dje/dje.log
     #logfile = path + 'dje.log' # log via bash output (>> logfile)
     #log = open(logfile,'a')
     #log.write(logtime()+' - Programa iniciado.\n')
