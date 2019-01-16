@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 
+"""Notificação para Busca Avançada do DJE"""
+
 import subprocess
 import time
+import sys
+import re
 import urllib.request
 import urllib.parse
 from bs4 import BeautifulSoup
@@ -13,6 +17,7 @@ def logtime():
     return(time.strftime("%d/%m/%Y-%H:%M:%S"))
 
 def busca_inicial():
+    """Checa se a data já virou e obtem um id para as buscas"""
     url = 'http://dje.tjsp.jus.br/cdje/consultaAvancada.do'
     try:
         page = urllib.request.urlopen(url)
@@ -35,7 +40,7 @@ def busca_inicial():
     return([url,dtfim])
 
 def nova_busca(url,dtfim):
-    ## nova busca
+    """Realiza uma nova busca e checa se já está disponível"""
     values = {'dadosConsulta.dtFim' : dtfim,
               'dadosConsulta.dtInicio' : dtfim,
               'dadosConsulta.cdCaderno' : '10', # Administrativo apenas
@@ -60,45 +65,28 @@ def nova_busca(url,dtfim):
     return(len(res))
 
 if __name__ == "__main__":
-    path = '/home/renato/git/dje/' # compatibilidade cron
-    ### cron: 00 21 * * 1-5 /home/renato/git/dje/dje.py >> /home/renato/git/dje/dje.log
-    #logfile = path + 'dje.log' # log via bash output (>> logfile)
-    #log = open(logfile,'a')
-    #log.write(logtime()+' - Programa iniciado.\n')
+    path = re.search('((?:.*?/)+).*\.py',sys.argv[0]).group(1) # guarda o caminho para rodar o script de notificação por causa do cron
     print(logtime()+' - Programa iniciado.')
     subprocess.run(path + 'notify.sh "'+logtime()+'\nPrograma Iniciado" ', shell = True)
     [url,dtfim] = busca_inicial() # inicializa
     while dtfim == hoje():
-        #log.write(logtime()+' - Data não virou ainda. Nova busca em 5 minutos\n')
         print(logtime()+' - Data não virou ainda. Nova busca em 5 minutos')
         time.sleep(300)
         [url,dtfim] = busca_inicial()
-    #log.write(logtime()+' - Data virou.\n')
     print(logtime()+' - Data virou.')
     subprocess.run(path + 'notify.sh "'+logtime()+'\nData Virou"', shell = True)
     res = nova_busca(url,dtfim)
-    while res == 0:
-        #if time.strftime("%H") == '21': # data virou
-        #    pausa = 60
-        #else:  # apos 22:00
-        #    pausa = 30
-        pausa = 60
-        #log.write(logtime()+' - Resultado indisponível, nova busca em '+pausa+' segundos.\n')
+    while res == 0: # enquanto não está disponível
+        pausa = 60 # espera 1 minuto entre cada busca
         print(logtime()+' - Resultado indisponível, nova busca em '+str(pausa)+' segundos.')
         time.sleep(pausa)
-        res = nova_busca(url,dtfim)
-        if time.strftime("%H") == '02':
+        if time.strftime("%H") == '02': # evita rodar depois de 02:00
             res = -1
-    if res == 1:
-        #log.write(logtime()+' - Resultado disponível.\n')
-        #log.write('#####################################\n')
-        #log.close()
+        res = nova_busca(url,dtfim)
+    if res == 1: 
         print(logtime()+' - Resultado disponível.\n#####################################')
         subprocess.run(path + 'notify.sh "'+logtime()+'\nDJE disponível"', shell = True)
     else:
-        #log.write(logtime()+' - ERRO - Tempo limite atingido.\n')
-        #log.write('#####################################\n')
-        #log.close()
         print(logtime()+' - ERRO - Tempo limite atingido.\n#####################################')
 
 
