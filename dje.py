@@ -2,10 +2,7 @@
 
 """Notificação para Busca Avançada do DJE"""
 
-import subprocess
-import time
-import sys
-import re
+import subprocess, time, sys, re, platform
 import urllib.request
 import urllib.parse
 from bs4 import BeautifulSoup
@@ -64,17 +61,26 @@ def nova_busca(url,dtfim):
     res = ba.find_all('div', id='divResultadosSuperior')        
     return(len(res))
 
+def notifica(path,msg):
+    if platform.system() == 'Linux':
+        subprocess.run(path + 'notify.sh "'+logtime()+'\n'+msg+'" ', shell = True)
+    elif platform.system() == 'Windows':
+        subprocess.run('msg * '+msg, shell=True)        
+
 if __name__ == "__main__":
-    path = re.search('((?:.*?/)+).*\.py',sys.argv[0]).group(1) # guarda o caminho para rodar o script de notificação por causa do cron
+    if platform.system() == 'Linux':
+        path = re.search('((?:.*?/)+).*\.py',sys.argv[0]).group(1) # guarda o caminho para rodar o script de notificação por causa do cron
+    else:
+        path = ''
     print(logtime()+' - Programa iniciado.')
-    subprocess.run(path + 'notify.sh "'+logtime()+'\nPrograma Iniciado" ', shell = True)
+    notifica(path,'Programa Iniciado')
     [url,dtfim] = busca_inicial() # inicializa
     while dtfim == hoje():
         print(logtime()+' - Data não virou ainda. Nova busca em 5 minutos')
         time.sleep(300)
         [url,dtfim] = busca_inicial()
     print(logtime()+' - Data virou.')
-    subprocess.run(path + 'notify.sh "'+logtime()+'\nData Virou"', shell = True)
+    notifica(path,'Data Virou')
     res = nova_busca(url,dtfim)
     while res == 0: # enquanto não está disponível
         pausa = 60 # espera 1 minuto entre cada busca
@@ -85,7 +91,7 @@ if __name__ == "__main__":
         res = nova_busca(url,dtfim)
     if res == 1: 
         print(logtime()+' - Resultado disponível.\n#####################################')
-        subprocess.run(path + 'notify.sh "'+logtime()+'\nDJE disponível"', shell = True)
+        notifica(path,'DJE disponível')
     else:
         print(logtime()+' - ERRO - Tempo limite atingido.\n#####################################')
 
