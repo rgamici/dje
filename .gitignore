@@ -1,2 +1,7 @@
 *~
-dje.log
+*.log
+*.spec
+build/*
+dist/*
+nohup.out
+__pycache__
