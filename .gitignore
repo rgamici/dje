@@ -5,3 +5,4 @@ build/*
 dist/*
 nohup.out
 __pycache__
+README.html

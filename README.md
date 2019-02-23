@@ -1,4 +1,4 @@
-# Notificação para Busca Avançada do DJE
+# Notificação para Busca Avançada do DJE e Diário Oficial
 
 Esse script foi escrito considerando uma instalação Debian+LXDE.
 Outras distribuições não foram testadas e talvez necessitem de alguns ajustes.
@@ -8,15 +8,21 @@ Outras distribuições não foram testadas e talvez necessitem de alguns ajustes
 * Python3
 * Beautiful Soup (python3-bs4)
 * Notify-send (libnotify)
+* Selenium (python3-selenium)
 
 Caso não tenha certeza se os pacotes estão instalados:  
 `sudo apt-get update`  
-`sudo apt-get install python3-bs4 libnotify`
+`sudo apt-get install python3-bs4 libnotify python3-selenium`
 
 Baixe os arquivos do github e coloque-os em uma pasta.  
 [Github](https://github.com/rgamici/dje) ou [arquivo .zip](https://github.com/rgamici/dje/archive/master.zip)
 
+Caso não tenho o python instalado, [essa página](https://github.com/rgamici/dje/releases) contém algumas versões compiladas.
+Baixe o arquivo `.zip` ou `.exe` e execute diretamente.
+
 ## Executando o script
+
+### Linux
 
 No terminal execute o comando:  
 `./dje.py`  
@@ -25,6 +31,26 @@ Algumas mensagens serão impressas na tela.
 
 Caso não queira deixar o terminal aberto:  
 `nohup ./dje.py &`  
+
+### Windows
+
+1. Baixe o Python 3: https://www.python.org/downloads/release/python-372/;
+
+2. Na primeira janela de instalação, marque a caixa "Add Python 3.7 to PATH" e clique em "Install Now";
+
+3. Após instalado, abra o Power Shell (aperte as teclas "WINDOWS + R", digite "powershell" na caixa de diálogo que abrir e aperte "Ok");
+
+4. Para instalar o BeatifulSoup, digite:  
+`python -m pip install bs4`
+
+5. Após instalado o BeatifulSoup, instale o PyQt5:  
+`python -m pip install pyqt5`
+
+6. Acesse https://github.com/rgamici/dje, clique em "Clone or Download" e em "Download ZIP"
+
+7. Descompacte o arquivo baixado e dê um duplo clique em `dje.py`
+
+8. O programa ficará rodando em um console e mostrará uma caixa de diálogo quando virar a data do DJE ou ele estiver disponível!
 
 ### Usando cron para executar automaticamente todos os dias
 
