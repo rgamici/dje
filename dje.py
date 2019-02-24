@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""Notificação para Busca Avançada do DJE"""
+"""Notificação para Busca Avançada do DJE e Imprensa Oficial"""
 
 
 import subprocess
@@ -41,24 +41,19 @@ def busca_inicial():
         print(logtime()+' - Erro ao carregar página')
         return([url, hoje()])  # vai forçar nova busca
     soup = BeautifulSoup(page, 'html.parser')
-
     # separa secao busca avançada
     ba = soup.find_all(class_='secaoFormBody')
     ba = ba[len(ba)-2]  # há um outro dentro, seleciona o penultimo
-
-    # POST method info
     # precisa de um id valido para novas buscas
     form_action = ba.find('form')['action']
     url = 'http://dje.tjsp.jus.br' + form_action
-
     # data busca
     dtfim = ba.find(id='dtFimString')['value']
     return([url, dtfim])
 
 
 def nova_busca(url, dtfim):
-    """Realiza uma nova busca e checa se já está disponível"""
-    # Não faz nada
+    """Realiza uma nova busca avançada e checa se já está disponível"""
     values = {'dadosConsulta.dtFim': dtfim,
               'dadosConsulta.dtInicio': dtfim,
               'dadosConsulta.cdCaderno': '10',  # Administrativo apenas
@@ -71,24 +66,23 @@ def nova_busca(url, dtfim):
     except urllib.error.URLError:
         print(logtime()+' - Erro ao carregar página')
         return(0)  # vai forçar nova busca
-
     soup = BeautifulSoup(the_page, 'html.parser')
-
     # separa secao busca avançada
     ba = soup.find_all(class_='secaoFormBody')
-    ba = ba[len(ba)-2]  # há um outro dentro -1 -> -2
-
-    # resultado disponível
+    ba = ba[len(ba)-2]  # há um outro dentro, seleciona o penultimo
+    # busca por elemento que aparece quando o resultado está disponível
     res = ba.find_all('div', id='divResultadosSuperior')
     return(len(res))
 
 
 def notifica(path, msg):
+    '''
+    Envia notificação de novo status
+    '''
     if platform.system() == 'Linux':
         subprocess.run(path + 'notify.sh "'+logtime()+'\n'+msg+'" ',
                        shell=True)
     elif platform.system() == 'Windows':
-        # subprocess.run('msg * '+msg, shell=True)
         pop = QMessageBox()
         pop.setIcon(QMessageBox.Information)
         pop.setText(msg)
@@ -107,7 +101,7 @@ def imprensa_init(dtfim):
     dtfim = dtfim.replace('/', '%2F')
     url += dtfim + url2
     options = Options()
-    # DEBUG: comente a próxima linha
+    # DEBUG: comente a próxima linha para visualizar o navegador
     options.headless = True
     driver = webdriver.Firefox(options=options)
     driver.get(url)
@@ -118,15 +112,15 @@ def imprensa_numpags(driver):
     '''
     Checa se o número de páginas já está disponível
     '''
-    driver.refresh()
-    iframe_nav = driver.find_elements_by_tag_name('iframe')[1]
-    driver.switch_to.frame(iframe_nav)
     try:
+        driver.refresh()
+        iframe_nav = driver.find_elements_by_tag_name('iframe')[1]
+        driver.switch_to.frame(iframe_nav)
         ele_numpags = driver.find_element_by_id("lblTotalPagina")
         numpags = ele_numpags.get_attribute("innerHTML")
+        driver.switch_to.default_content()
     except NoSuchElementException:
         numpags = -1
-    driver.switch_to.default_content()
     return(numpags)
 
 
@@ -134,31 +128,30 @@ def imprensa_troca_pag(driver):
     '''
     Troca de página e checa se o pdf carregou
     '''
-    driver.switch_to.default_content()
-    iframe_nav = driver.find_elements_by_tag_name('iframe')[1]
-    driver.switch_to.frame(iframe_nav)
-    ele_pag = driver.find_element_by_id("lblPagina")
-    pagina = ele_pag.get_attribute("innerHTML")
-    # Troca de página: Impar -> + 1; Par -> - 1
-    if int(pagina) % 2 == 0:
-        driver.find_element_by_id("lnkAnterior").click()
-    else:
-        driver.find_element_by_id("lnkProxima").click()
-    # Checa conteúdo
-    driver.switch_to.default_content()
-    iframe_pdf = driver.find_elements_by_tag_name('iframe')[0]
-    driver.switch_to.frame(iframe_pdf)
     try:
+        driver.switch_to.default_content()
+        iframe_nav = driver.find_elements_by_tag_name('iframe')[1]
+        driver.switch_to.frame(iframe_nav)
+        ele_pag = driver.find_element_by_id("lblPagina")
+        pagina = ele_pag.get_attribute("innerHTML")
+        # Troca de página: Impar -> + 1; Par -> - 1
+        if int(pagina) % 2 == 0:
+            driver.find_element_by_id("lnkAnterior").click()
+        else:
+            driver.find_element_by_id("lnkProxima").click()
+        # Checa conteúdo no outro iframe
+        driver.switch_to.default_content()
+        iframe_pdf = driver.find_elements_by_tag_name('iframe')[0]
+        driver.switch_to.frame(iframe_pdf)
         # Espera carregar alguma página
         WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.CSS_SELECTOR,
-                                            "#viewerContainer,"
-                                            "#content_lblTitulo"))
+                                            "#viewerContainer,"  # Pdf
+                                            "#content_lblTitulo"))  # Erro
         )
         # checa se retornou pdf
         driver.find_element_by_id("viewerContainer")
     except (TimeoutException, NoSuchElementException):
-        # Nenhuma página foi carregada ou carregou a de erro
         return(0)
     driver.switch_to.default_content()
     return(1)
@@ -180,13 +173,11 @@ if __name__ == "__main__":
         [url, dtfim] = busca_inicial()
     print(logtime() + ' - Data virou.')
     notifica(path, 'Data Virou')
-    # inicia selenium
     sel = imprensa_init(dtfim)
     numpags = -1
     while True:  # enquanto não está disponível
         # nova busca avançada
         if nova_busca(url, dtfim) != 0:
-            # sinaliza que a busca avançada está disponível
             print(logtime() + ' - Resultado disponível na busca avançada.\n'
                   '#####################################')
             notifica(path, 'DJE disponível na busca avançada')
@@ -199,9 +190,8 @@ if __name__ == "__main__":
                       + str(numpags))
                 notifica(path, 'Número de páginas disponível: ' + str(numpags))
                 continue  # ignora pausa
-        else:  # numpags já disponível
+        else:  # numpags já está disponível, troca de página
             if imprensa_troca_pag(sel) != 0:
-                # indica que a imprensa oficial está disponível
                 print(logtime() + ' - Resultado disponível na imprensa'
                       ' oficial.\n'
                       '#####################################')
@@ -211,7 +201,7 @@ if __name__ == "__main__":
         print(logtime() + ' - Resultado indisponível, nova busca em '
               + str(pausa) + ' segundos.')
         time.sleep(pausa)
-        if time.strftime("%H") == '02':  # evita rodar depois de 02:00
+        if time.strftime("%H") == '02':  # para de rodar após às 02:00
             print(logtime() + ' - ERRO - Tempo limite atingido.'
                   '\n#####################################')
             notifica(path, 'Tempo limite atingido.')
